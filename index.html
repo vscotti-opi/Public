@@ -102,10 +102,19 @@ input[type=text]:focus{outline:2px solid var(--p2);outline-offset:1px;border-col
  box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .plab::before{display:none!important}
 .cardClub{background:var(--rail2);border-radius:9px;padding:10px 11px;margin-bottom:8px}
-.cardClub .ch{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
-.cardClub .ch b{font-size:12.5px;font-weight:600;flex:1;min-width:0;overflow:hidden;
+.cardClub .ch{margin-bottom:9px}
+.cardClub .ch b{font-size:13px;font-weight:600;display:block;overflow:hidden;
  text-overflow:ellipsis;white-space:nowrap}
-.cardClub .ch span{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cardClub .cov{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;
+ padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:9px}
+.cardClub .cov b{font-size:24px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.cardClub .cov span{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.cardClub .cov em{font-style:normal;font-size:11px;color:var(--dim);flex-basis:100%;margin-top:2px}
+.cardClub .zh{font-size:9.5px;color:var(--dim);letter-spacing:.03em;margin-bottom:5px}
+.cardClub .zh.sep{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line)}
+.cardClub .cov .sc{font-style:normal;font-size:13px;color:var(--mut);
+ font-variant-numeric:tabular-nums;margin-left:-2px}
+.rg.dd .et{color:var(--dim)}
 .rg{display:flex;align-items:center;gap:7px;font-size:11px;padding:2px 0}
 .rg .et{width:104px;flex:0 0 104px;color:var(--mut);overflow:hidden;
  text-overflow:ellipsis;white-space:nowrap}
@@ -247,7 +256,7 @@ details[open] summary::before{content:"\2013 "}
         <button class="btn" id="bPoi" style="flex:1">Cerca nella vista attuale</button>
         <button class="btn" id="bPoiX">Pulisci</button>
       </div>
-      <p class="note" id="poiMsg">Trova le palestre che Google conosce nell'area inquadrata: compaiono come punti neri con il nome, e cliccandone una diventa un punto di riferimento per il raggio. Le vostre sedi vengono escluse. Stringi lo zoom sulla zona prima di cercare.</p>
+      <p class="note" id="poiMsg">Trova palestre, centri ginnastica e club sportivi che Google conosce nell'area inquadrata: compaiono come punti neri con il nome, e cliccandone una diventa un punto di riferimento per il raggio. Le vostre sedi vengono escluse. Stringi lo zoom sulla zona prima di cercare.</p>
     </div>
 
     <div class="sec">
@@ -261,7 +270,7 @@ details[open] summary::before{content:"\2013 "}
     </div>
 
     <div class="sec">
-      <h2>Club selezionati per paragone</h2>
+      <h2>Dove vivono i clienti</h2>
       <table id="tClub"></table>
       <p class="note" id="noteClub"></p>
     </div>
@@ -318,8 +327,8 @@ let conRaggio=new Set();       // club su cui è attivo il raggio
 /* Il colore segue l'ordine in cui i club vengono accesi, non l'elenco: il
    primo scelto e' sempre arancione, il secondo verde e cosi' via. Un Set in
    JavaScript conserva l'ordine di inserimento, quindi basta leggerlo. */
-const SERIE=['#F0641E','#2E9E4F','#B8940A','#D6342C','#16191D','#C4299B'];
-const NEUTRO='#6E7681';
+const SERIE=['#FF1FA8','#00D9F5','#00C24A','#E0102F','#FF7A00'];
+const NEUTRO='#F0641E';        // i club spenti restano arancioni
 function colClub(i){
   const k=[...scelti].indexOf(i);
   return k<0 ? NEUTRO : (k<SERIE.length ? SERIE[k] : NEUTRO);
@@ -698,7 +707,7 @@ async function cercaPalestre(){
     const {places}=await Place.searchNearby({
       fields:['displayName','location','formattedAddress'],
       locationRestriction:{center:{lat:c.lat,lng:c.lng},radius:raggio},
-      includedPrimaryTypes:['gym','fitness_center'],
+      includedPrimaryTypes:['gym','fitness_center','sports_club','sports_coaching','sports_complex'],
       maxResultCount:20,
       rankPreference:SearchNearbyRankPreference.POPULARITY,
       language:'it', region:'it'});
@@ -758,10 +767,11 @@ function aggiorna(){
   punti.forEach((p,k)=>rif.push({nome:p.nome,la:p.la,lo:p.lo,col:COL[k],ci:null}));
 
   const perRif=rif.map(()=>0), soloRif=rif.map(()=>0);
-  const perClub={};          // indice club -> [conteggi per riferimento, unione]
+  const perClub={};          // club -> [conteggi per riferimento, unione]
+  const esclClub={};         // club -> [conteggi esclusivi per riferimento]
   let unione=0, multipli=0;
   if(rif.length && scelti.size){
-    scelti.forEach(i=>perClub[i]=rif.map(()=>0).concat([0]));
+    scelti.forEach(i=>{perClub[i]=rif.map(()=>0).concat([0]);esclClub[i]=rif.map(()=>0)});
     for(const p of D.p){
       if(!scelti.has(p[0])||!vicino(p)) continue;
       let quanti=0, ultimo=-1;
@@ -772,7 +782,8 @@ function aggiorna(){
       }
       if(quanti){
         unione++; perClub[p[0]][rif.length]++;
-        if(quanti===1) soloRif[ultimo]++; else multipli++;
+        if(quanti===1){soloRif[ultimo]++; esclClub[p[0]][ultimo]++}
+        else multipli++;
       }
     }
   }
@@ -785,14 +796,22 @@ function aggiorna(){
     $('stack').innerHTML=seg.filter(x=>x.v>0).map(x=>
       `<div style="flex:${x.v} 1 0;background:${x.c}" title="${x.t}"></div>`).join('');
 
-    const intest=`<tr><th>Copertura raggio</th><th>Clienti in mappa</th><th>Clienti del club</th></tr>`;
+    const due=rif.length===2?' dei due raggi':' dei raggi';
+    const intest=`<tr><th>Clienti coperti dal raggio</th><th>Solo clienti club</th><th>%</th></tr>`;
     const corpo=rif.map((r,k)=>{
-      /* "del club" ha senso solo per un raggio centrato su una sede */
-      const propri = r.ci!==null && perClub[r.ci] ? perClub[r.ci][k] : null;
+      /* per un raggio su una sede il numero e la percentuale guardano i suoi
+         clienti; per un punto libero non esiste un club di riferimento */
+      const club = r.ci!==null && perClub[r.ci];
+      const n = club ? perClub[r.ci][k] : perRif[k];
+      const base = club ? totClub(r.ci) : mostrati;
       return `<tr><td><span class="chip" style="background:${r.col}"></span>${r.nome}</td>
-        <td class="n"><b>${fmt(perRif[k])}</b></td>
-        <td class="n">${propri===null?'<span style="color:var(--dim)">—</span>':fmt(propri)}</td></tr>`}).join('');
-    const coda=`<tr class="sum tot"><td class="full">Copertura complessiva</td>
+        <td class="n"><b>${fmt(n)}</b></td>
+        <td class="n">${base?(n/base*100).toFixed(1):0}%</td></tr>`}).join('');
+    const coda=(rif.length>1
+      ? `<tr class="sum"><td class="full">Intersezione${due}</td>
+          <td class="n">${fmt(multipli)}</td>
+          <td class="n">${mostrati?(multipli/mostrati*100).toFixed(1):0}%</td></tr>` : '')
+      + `<tr class="sum tot"><td class="full">${rif.length>1?'Insieme'+due:'Coperti dal raggio'}</td>
         <td class="n"><b>${fmt(unione)}</b></td>
         <td class="n">${mostrati?(unione/mostrati*100).toFixed(1):0}%</td></tr>
       <tr class="sum"><td class="full">Fuori da ogni raggio</td>
@@ -800,7 +819,7 @@ function aggiorna(){
         <td class="n">${mostrati?(fuori/mostrati*100).toFixed(1):0}%</td></tr>`;
     $('tRag').className='rt';
     $('tRag').innerHTML=intest+corpo+coda;
-    $('noteRag').textContent=`"Clienti in mappa" conta chiunque cada nel raggio, anche i soci di altri club mostrati; "clienti del club" solo quelli della sede al centro. Su ${fmt(mostrati)} soci, raggio di ${dec(R)} km, distanze in linea d'aria.`;
+    $('noteRag').textContent='';
   }else{
     $('stack').innerHTML=''; $('tRag').innerHTML=''; $('tRag').className='';
     $('noteRag').textContent = !scelti.size ? 'Nessun club mostrato.'
@@ -825,15 +844,42 @@ function aggiorna(){
     $('tClub').className='';
     $('tClub').innerHTML='<tr><td style="border:0;padding:0">'+ordinati.map(({c,i,u})=>{
       const v=perClub[i]||[], tt=totClub(i);
-      const barre=rif.map((r,k)=>{
-        const n=v[k]||0, q=tt?n/tt*100:0;
-        return `<div class="rg"><span class="et">${r.nome}</span>
-          <span class="bb"><i style="width:${q}%;background:${r.col}"></i></span>
-          <span class="vv">${fmt(n)}</span><span class="pp">${q.toFixed(0)}%</span></div>`}).join('');
+      /* Zone esclusive: ogni cliente conta in una casella sola, cosi' le
+         percentuali sommano esattamente al coperto dal raggio. Chi abita dove
+         due raggi si accavallano finisce nell'intersezione. */
+      const esclusivi=esclClub[i]||rif.map(()=>0);
+      const somma=rif.reduce((a,r,k)=>a+(v[k]||0),0), doppi=somma-u;
+      const mio=rif.findIndex(r=>r.ci===i);        // il raggio del club stesso
+      const dentro=mio>=0?(v[mio]||0):0;           // suoi clienti nel proprio raggio
+      const fuori=u-dentro;                        // coperti solo da raggi altrui
+
+      const riga=(et,n,col,cl)=>{
+        const q=u?n/u*100:0;
+        return `<div class="rg${cl||''}"><span class="et">${et}</span>
+          <span class="bb"><i style="width:${Math.min(100,q)}%;background:${col}"></i></span>
+          <span class="vv">${fmt(n)}</span><span class="pp">${q.toFixed(0)}%</span></div>`};
+
+      let corpo='';
+      if(mio>=0){
+        corpo += riga(rif[mio].nome, doppi>0?esclusivi[mio]:(v[mio]||0), rif[mio].col);
+        if(doppi>0) corpo += riga('Intersezione', doppi, '#7D6BB0', ' dd');
+        const altri=rif.map((r,k)=>({r,k})).filter(({k})=>k!==mio&&esclusivi[k]>0);
+        if(altri.length) corpo += '<div class="zh sep">Fuori dal raggio del club</div>'
+          + altri.map(({r,k})=>riga(r.nome, esclusivi[k], r.col)).join('');
+      }else{
+        corpo = rif.map((r,k)=>riga(r.nome, doppi>0?esclusivi[k]:(v[k]||0), r.col)).join('')
+          + (doppi>0?riga('Intersezione', doppi, '#7D6BB0', ' dd'):'');
+      }
+
+      const scomp = mio>=0 && fuori>0
+        ? ` <i class="sc">(${fmt(dentro)} + ${fmt(fuori)})</i>` : '';
       return `<div class="cardClub">
-        <div class="ch"><b>${c.n}</b><span>${fmt(u)} su ${fmt(tt)} · ${tt?(u/tt*100).toFixed(0):0}%</span></div>
-        ${barre}</div>`}).join('')+'</td></tr>';
-    $('noteClub').textContent=`Per ogni club, quanti suoi soci cadono entro ${dec(R)} km da ciascun riferimento. In testa alla scheda il totale di chi ricade in almeno uno.`;
+        <div class="ch"><b>${c.n}</b></div>
+        <div class="cov"><b>${fmt(u)}</b>${scomp}<span>su ${fmt(tt)} · ${tt?(u/tt*100).toFixed(0):0}%</span>
+          <em>Clienti coperti da almeno un raggio${mio>=0&&fuori>0?`, di cui ${fmt(dentro)} dal proprio`:''}</em></div>
+        <div class="zh">Zona di residenza</div>
+        ${corpo}</div>`}).join('')+'</td></tr>';
+    $('noteClub').textContent='';
   }
 }
 
