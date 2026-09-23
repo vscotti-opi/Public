@@ -264,7 +264,7 @@ details[open] summary::before{content:"\2013 "}
         <button class="btn" id="bPoi" style="flex:1">Cerca nella vista attuale</button>
         <button class="btn" id="bPoiX">Pulisci</button>
       </div>
-      <p class="note" id="poiMsg">Trova palestre, centri ginnastica e club sportivi che Google conosce nell'area inquadrata: compaiono come punti neri con il nome, e cliccandone una diventa un punto di riferimento per il raggio. Le vostre sedi vengono escluse. Stringi lo zoom sulla zona prima di cercare. Scrivendo un nome nel campo qui sopra cerca solo quello.</p>
+      <p class="note" id="poiMsg">Trova le palestre che Google conosce nell'area inquadrata: compaiono come punti neri con il nome, e cliccandone una diventa un punto di riferimento per il raggio. Le vostre sedi vengono escluse. Stringi lo zoom sulla zona prima di cercare. Scrivendo un nome nel campo qui sopra cerca solo quello.</p>
     </div>
 
     <div class="sec">
@@ -721,8 +721,7 @@ async function cercaPalestre(){
     const {places}=await Place.searchNearby({
       fields:['displayName','location','formattedAddress'],
       locationRestriction:{center:{lat:c.lat,lng:c.lng},radius:raggio},
-      includedPrimaryTypes:['gym','fitness_center','sports_club','sports_coaching',
-                            'sports_complex','sports_school','wellness_center'],
+      includedPrimaryTypes:['gym','fitness_center'],
       maxResultCount:20,
       /* per distanza, non per popolarità: altrimenti le insegne minori
          restano fuori dai primi venti risultati */
@@ -739,8 +738,10 @@ async function cercaPalestre(){
        "gym": una passata per testo le recupera. */
     try{
       const {Place:P2}=await google.maps.importLibrary('places');
+      /* "GO Fit" per nome: Google la classifica come scuola sportiva e non
+         comparirebbe nella ricerca per tipo, ristretta alle sole palestre. */
       const extra=($('poiQ').value||'').trim();
-      const query=extra?[extra]:['palestra','centro fitness','centro ginnastica'];
+      const query=extra?[extra]:['palestra','GO Fit'];
       for(const q of query){
         const r=await P2.searchByText({
           textQuery:q, fields:['displayName','location','formattedAddress'],
