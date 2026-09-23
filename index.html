@@ -70,8 +70,9 @@ input[type=text]:focus{outline:2px solid var(--p2);outline-offset:1px;border-col
 .cb .nome b{font-weight:400;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cb.on .nome b{font-weight:500;color:var(--txt)}
 .cb .nome:hover b{text-decoration:underline}
-.cb em{font-style:normal;color:var(--dim);font-variant-numeric:tabular-nums;font-size:11.5px;
- width:56px;flex:0 0 56px;text-align:right;margin:0}
+.cb em{font-style:normal;color:var(--txt);font-weight:600;font-variant-numeric:tabular-nums;
+ font-size:11.5px;width:56px;flex:0 0 56px;text-align:right;margin:0}
+.cb:not(.on) em{color:var(--dim);font-weight:400}
 .cb .rif{width:16px;height:16px;flex-basis:16px;border:1.5px solid var(--dim);border-radius:50%}
 .cb .rif:hover{border-color:var(--mut)}
 .cb .rif:checked{border-color:#F0641E;border-width:2px;background:rgba(240,100,30,.15)}
@@ -87,6 +88,7 @@ input[type=text]:focus{outline:2px solid var(--p2);outline-offset:1px;border-col
 .rt th:nth-child(3),.rt td:nth-child(3){width:78px}
 .rt .chip{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}
 .rt .sum td{color:var(--mut)}
+.rt .sum td.n{color:var(--txt);font-weight:600}
 .rt tr.tot td{border-top:1px solid var(--line);padding-top:8px}
 .pt2 th{font-size:9.5px;font-weight:600;color:var(--dim);text-align:right;padding:0 0 5px;
  border-bottom:1px solid var(--line);line-height:1.2;vertical-align:bottom}
@@ -108,11 +110,11 @@ input[type=text]:focus{outline:2px solid var(--p2);outline-offset:1px;border-col
 .cardClub .cov{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;
  padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:9px}
 .cardClub .cov b{font-size:24px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
-.cardClub .cov span{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.cardClub .cov span{font-size:12px;color:var(--txt);font-weight:600;font-variant-numeric:tabular-nums}
 .cardClub .cov em{font-style:normal;font-size:11px;color:var(--dim);flex-basis:100%;margin-top:2px}
 .cardClub .zh{font-size:9.5px;color:var(--dim);letter-spacing:.03em;margin-bottom:5px}
 .cardClub .zh.sep{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line)}
-.cardClub .cov .sc{font-style:normal;font-size:13px;color:var(--mut);
+.cardClub .cov .sc{font-style:normal;font-size:13px;color:var(--txt);font-weight:600;
  font-variant-numeric:tabular-nums;margin-left:-2px}
 .rg.dd .et{color:var(--dim)}
 .rg{display:flex;align-items:center;gap:7px;font-size:11px;padding:2px 0}
@@ -120,8 +122,10 @@ input[type=text]:focus{outline:2px solid var(--p2);outline-offset:1px;border-col
  text-overflow:ellipsis;white-space:nowrap}
 .rg .bb{flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden;min-width:0}
 .rg .bb i{display:block;height:100%;border-radius:3px}
-.rg .vv{width:44px;flex:0 0 44px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
-.rg .pp{width:32px;flex:0 0 32px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.rg .vv{width:46px;flex:0 0 46px;text-align:right;font-variant-numeric:tabular-nums;
+ font-weight:600;color:var(--txt);font-size:11px}
+.rg .pp{width:36px;flex:0 0 36px;text-align:right;font-variant-numeric:tabular-nums;
+ font-weight:600;color:var(--txt);font-size:11px}
 
 .ac{position:relative}
 #sugg{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1200;background:var(--rail2);
@@ -155,7 +159,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 td{padding:6px 0;border-bottom:1px solid #222932;font-variant-numeric:tabular-nums}
 tr:last-child td{border-bottom:0}
-td.n{text-align:right;color:var(--mut);white-space:nowrap}
+td.n{text-align:right;color:var(--txt);font-weight:600;white-space:nowrap}
 td.n b{color:var(--txt);font-weight:600}
 .bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:4px}
 .bar i{display:block;height:100%;border-radius:2px}
@@ -327,7 +331,7 @@ let conRaggio=new Set();       // club su cui è attivo il raggio
 /* Il colore segue l'ordine in cui i club vengono accesi, non l'elenco: il
    primo scelto e' sempre arancione, il secondo verde e cosi' via. Un Set in
    JavaScript conserva l'ordine di inserimento, quindi basta leggerlo. */
-const SERIE=['#FF1FA8','#00D9F5','#00C24A','#E0102F','#FF7A00'];
+const SERIE=['#C4007F','#0F3BD6','#00C24A','#E0102F','#FF7A00'];
 const NEUTRO='#F0641E';        // i club spenti restano arancioni
 function colClub(i){
   const k=[...scelti].indexOf(i);
@@ -712,11 +716,24 @@ async function cercaPalestre(){
       rankPreference:SearchNearbyRankPreference.POPULARITY,
       language:'it', region:'it'});
     let scartate=0;
-    (places||[]).forEach(p=>{
+    const raccogli=arr=>(arr||[]).forEach(p=>{
       const la=p.location.lat(), lo=p.location.lng();
       if(nostra(p.displayName,la,lo)){scartate++;return}
       segnaPalestra(p.displayName,la,lo,p.formattedAddress||'');
     });
+    raccogli(places);
+    /* Alcune insegne (GO Fit, centri ginnastica) Google non le classifica come
+       "gym": una passata per testo le recupera. */
+    try{
+      const {Place:P2}=await google.maps.importLibrary('places');
+      for(const q of ['palestra','centro fitness','centro ginnastica']){
+        const r=await P2.searchByText({
+          textQuery:q, fields:['displayName','location','formattedAddress'],
+          locationBias:{center:{lat:c.lat,lng:c.lng},radius:raggio},
+          maxResultCount:20, language:'it', region:'it'});
+        raccogli(r.places);
+      }
+    }catch(e){ /* la ricerca per tipo e' comunque andata a buon fine */ }
     ultimeScartate=scartate;
   }catch(e){
     poimsg('Places non disponibile: serve abilitare "Places API (New)" nella console Google. '+(e.message||''),true);
@@ -862,13 +879,13 @@ function aggiorna(){
       let corpo='';
       if(mio>=0){
         corpo += riga(rif[mio].nome, doppi>0?esclusivi[mio]:(v[mio]||0), rif[mio].col);
-        if(doppi>0) corpo += riga('Intersezione', doppi, '#7D6BB0', ' dd');
+        if(doppi>0) corpo += riga('INTERSEZIONE', doppi, '#7D6BB0', ' dd');
         const altri=rif.map((r,k)=>({r,k})).filter(({k})=>k!==mio&&esclusivi[k]>0);
         if(altri.length) corpo += '<div class="zh sep">Fuori dal raggio del club</div>'
           + altri.map(({r,k})=>riga(r.nome, esclusivi[k], r.col)).join('');
       }else{
         corpo = rif.map((r,k)=>riga(r.nome, doppi>0?esclusivi[k]:(v[k]||0), r.col)).join('')
-          + (doppi>0?riga('Intersezione', doppi, '#7D6BB0', ' dd'):'');
+          + (doppi>0?riga('INTERSEZIONE', doppi, '#7D6BB0', ' dd'):'');
       }
 
       const scomp = mio>=0 && fuori>0
