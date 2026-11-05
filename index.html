@@ -145,7 +145,10 @@ input[type=text]:focus{outline:2px solid var(--p2);outline-offset:1px;border-col
 #sugg button small{display:block;color:var(--txt);font-size:11px;margin-top:1px}
 .pt{background:var(--rail2);border-radius:9px;padding:10px 11px;margin-bottom:8px}
 .pt .top{display:flex;align-items:center;gap:8px;font-size:12.5px}
-.pt i{width:11px;height:11px;border-radius:50%;flex:0 0 11px}
+.pt i{width:17px;height:17px;border-radius:50%;flex:0 0 17px;display:flex;
+ align-items:center;justify-content:center;color:#fff;font-style:normal;
+ font:700 9.5px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+ font-variant-numeric:tabular-nums}
 .pt .rin{flex:1;min-width:0;background:none;border:0;border-bottom:1px dashed transparent;
  color:var(--txt);font:inherit;font-size:12.5px;font-weight:600;padding:1px 0}
 .pt .rin:hover{border-bottom-color:var(--line)}
@@ -198,7 +201,10 @@ details[open] summary::before{content:"\2013 "}
 .clab::before{display:none!important}
 .focus{display:flex;align-items:center;gap:8px;margin-bottom:9px}
 .focus select{flex:1}
-.pmark{border-radius:50%;border:3.5px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.55)}
+.pmark{width:22px;height:22px;border-radius:50%;border:3.5px solid #fff;
+ box-shadow:0 3px 10px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;
+ color:#fff;font:700 10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+ font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.55)}
 .leaflet-popup-content-wrapper{background:var(--rail);color:var(--txt);border-radius:9px}
 .leaflet-popup-content{margin:11px 14px;font-size:13px;line-height:1.5}
 .leaflet-popup-tip{background:var(--rail)}
@@ -335,7 +341,13 @@ const D={"clubs":[{"n":"BOLOGNA CENTRO","la":44.4969712,"lo":11.3451845,"ind":"V
 const fmt=n=>n.toLocaleString('it-IT');
 const dec=n=>n.toLocaleString('it-IT',{minimumFractionDigits:1,maximumFractionDigits:1});
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const COL=['#2C6FD1','#4FA3E3','#1B4F9C'], CLUBCOL='#F0641E';
+/* I punti restano nella famiglia fredda, per separarli a colpo d'occhio
+   dall'arancione dei club; oltre quattro o cinque tinte vicine l'occhio non
+   le distingue piu', quindi ogni punto porta anche il proprio numero. */
+const COL=['#2C6FD1','#00B4D8','#1B4F9C','#5E60CE','#4FA3E3',
+           '#0E7C7B','#8FA9F5','#0A3D91','#38B6A0','#A5C8FF'];
+const CLUBCOL='#F0641E';
+const MAX_PUNTI=10;            // punti di riferimento liberi
 /* ---------------- stato ---------------- */
 let scelti=new Set();          // all'avvio nessun club: si sceglie cosa guardare
 let punti=[];                  // {nome, la, lo}
@@ -587,7 +599,7 @@ function disegnaPunti(){
       fillColor:c,fillOpacity:.06,interactive:false}).addTo(rings);
     L.marker([p.la,p.lo],{zIndexOffset:2000,
       icon:L.divIcon({className:'',iconSize:[22,22],iconAnchor:[11,11],
-        html:`<div class="pmark" style="width:22px;height:22px;background:${c}"></div>`})})
+        html:`<div class="pmark" style="background:${c}">${k+1}</div>`})})
      /* l'etichetta segue il nome: rinominando il punto cambia anche in mappa */
      .bindTooltip(p.nome,{permanent:true,direction:'top',offset:[0,-13],className:'plabel'})
      .bindPopup(`<b>${p.nome}</b><div class="m">Punto ${k+1} · ${p.la.toFixed(5)}, ${p.lo.toFixed(5)}</div>`)
@@ -595,7 +607,7 @@ function disegnaPunti(){
   });
 }
 function aggiungiPunto(nome,la,lo,esatto){
-  if(punti.length>=3){msg('Massimo tre punti: rimuovine uno per aggiungerne un altro.');return}
+  if(punti.length>=MAX_PUNTI){msg(`Massimo ${MAX_PUNTI} punti: rimuovine uno per aggiungerne un altro.`);return}
   const scelto=esatto?'':($('pname').value||'').trim();
   punti.push({nome:scelto||nome,la:+la,lo:+lo});
   $('addr').value=''; $('pname').value=''; msg('');
@@ -854,12 +866,12 @@ function aggiorna(){
   $('emFar').textContent=$('lFar').checked?`${fmt(esclusi)} esclusi`:`${fmt(esclusi)} inclusi`;
   $('kClub').textContent=`${scelti.size} su ${CL.length}`;
   $('kSoci').textContent=fmt(mostrati);
-  $('ptCount').textContent=`${punti.length} su 3`;
+  $('ptCount').textContent=`${punti.length} su ${MAX_PUNTI}`;
   $('rVal').textContent=dec(R);
 
   /* elenco punti */
   $('ptList').innerHTML = punti.length ? punti.map((p,k)=>
-    `<div class="pt"><div class="top"><i style="background:${COL[k]}"></i>
+    `<div class="pt"><div class="top"><i style="background:${COL[k]}">${k+1}</i>
       <input class="rin" data-k="${k}" value="${p.nome.replace(/"/g,'&quot;')}" title="Rinomina il punto">
       <button class="x" data-k="${k}" title="Rimuovi">&times;</button></div>
       <div class="d">${p.la.toFixed(5)}, ${p.lo.toFixed(5)}</div></div>`).join('')
